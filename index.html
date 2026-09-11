@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#cbe8f5">
+  <meta name="description" content="Викторина по «Сумеркам»: пять фильмов, по 30 вопросов с видео в каждом. Продолжай с сохранённого места.">
+  <title>Сумерки — для тебя ❤️</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='54'%3E🌙%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css?v=1">
+  <script type="module" src="./app.mjs?v=1"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="./" aria-label="Сумерки — на главную">сумерки</a>
+    <button id="back" class="text-button" hidden>← К фильмам</button>
+  </header>
+
+  <main>
+    <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+      <div class="welcome-copy">
+        <h1 id="welcome-title">Для тебя <span class="title-heart" aria-label="с любовью">♡</span></h1>
+        <p class="welcome-intro">Выбери фильм.</p>
+        <p id="load-status" class="quiet" role="status" hidden></p>
+      </div>
+      <div id="films" class="films" aria-label="Выбор фильма"></div>
+    </section>
+
+    <section id="quiz" class="quiz" aria-labelledby="question-title" hidden>
+      <p id="film-title" class="film-title"></p>
+      <div class="quiz-heading">
+        <div class="question-position"><span id="question-number">01</span><span class="out-of">/ <span id="question-total">30</span></span></div>
+        <div class="progress-wrap"><div id="progress" class="progress" role="progressbar" aria-label="Пройдено вопросов" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><span id="progress-fill"></span></div></div>
+        <div class="score"><span aria-hidden="true">✦</span><span id="score">0</span><span class="score-label">верно</span></div>
+      </div>
+
+      <div class="play-area">
+        <div class="scene-column">
+          <div class="screen">
+            <img id="memory-cover" src="./media/cover.jpg" alt="Кадр из саги «Сумерки»" width="1280" height="720">
+            <video id="video" controls playsinline preload="none" hidden aria-label="Отрывок из саги «Сумерки»"></video>
+          </div>
+          <div id="video-error" class="video-error" role="status" hidden><span>Видео не загрузилось.</span><button id="retry-video" class="text-button">Попробовать ещё раз</button></div>
+          <p id="source-caption" class="source-caption" hidden></p>
+        </div>
+        <div class="question-column">
+          <h2 id="question-title" tabindex="-1"></h2>
+          <div id="answers" class="answers" role="group" aria-labelledby="question-title"></div>
+          <div id="feedback" class="feedback" role="status" aria-live="polite" hidden><p id="explanation"></p></div>
+          <button id="next" class="button primary next" hidden>Следующий вопрос <span aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="result" class="result" aria-labelledby="result-title" hidden>
+      <span class="result-heart" aria-hidden="true">♡</span>
+      <p id="result-film" class="film-title"></p>
+      <div class="result-score"><span id="final-score"></span><span>/ <span id="result-total">30</span></span></div>
+      <h1 id="result-title" tabindex="-1"></h1>
+      <button id="restart" class="button primary">Сыграть ещё раз <span aria-hidden="true">↻</span></button>
+      <button id="choose-film" class="text-button">Выбрать другой фильм</button>
+    </section>
+    <p id="storage-error" class="storage-error" role="status" hidden>Браузер не разрешает сохранять прогресс. Игра продолжится, но после закрытия страницы ответы могут потеряться.</p>
+    <noscript>Чтобы сыграть, включи JavaScript в настройках браузера.</noscript>
+  </main>
+</body>
+</html>
