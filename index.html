@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#cbe8f5">
+  <meta name="theme-color" content="#080f14">
   <meta name="description" content="Викторина по «Сумеркам»: пять фильмов, по 30 вопросов с видео в каждом. Продолжай с сохранённого места.">
   <title>Сумерки — для тебя ❤️</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='54'%3E🌙%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=1">
-  <script type="module" src="./app.mjs?v=1"></script>
+  <link rel="stylesheet" href="./styles.css?v=2">
+  <script type="module" src="./app.mjs?v=2"></script>
 </head>
 <body>
   <header class="masthead">
-    <a class="wordmark" href="./" aria-label="Сумерки — на главную">сумерки</a>
+    <a class="wordmark" href="./" aria-label="Сумерки — на главную"><span class="brand-moon" aria-hidden="true"></span>сумерки</a>
     <button id="back" class="text-button" hidden>← К фильмам</button>
   </header>
 
@@ -27,7 +27,16 @@
     </section>
 
     <section id="quiz" class="quiz" aria-labelledby="question-title" hidden>
-      <p id="film-title" class="film-title"></p>
+      <div class="chapter">
+        <div class="chapter-copy">
+          <span id="chapter-number" class="chapter-number" aria-hidden="true"></span>
+          <h1 id="film-title" class="chapter-title"></h1>
+        </div>
+        <figure class="chapter-portrait">
+          <img id="chapter-photo" width="1152" height="1536" alt="Ваше фото в атмосфере «Сумерек»">
+        </figure>
+      </div>
+      <div id="game-content" class="game-content">
       <div class="quiz-heading">
         <div class="question-position"><span id="question-number">01</span><span class="out-of">/ <span id="question-total">30</span></span></div>
         <div class="progress-wrap"><div id="progress" class="progress" role="progressbar" aria-label="Пройдено вопросов" aria-valuemin="0" aria-valuemax="30" aria-valuenow="0"><span id="progress-fill"></span></div></div>
@@ -50,15 +59,19 @@
           <button id="next" class="button primary next" hidden>Следующий вопрос <span aria-hidden="true">→</span></button>
         </div>
       </div>
+      </div>
     </section>
 
     <section id="result" class="result" aria-labelledby="result-title" hidden>
+      <img id="result-photo" class="result-photo" width="1152" height="1536" alt="Ваше фото в атмосфере «Сумерек»">
+      <div class="result-copy">
       <span class="result-heart" aria-hidden="true">♡</span>
       <p id="result-film" class="film-title"></p>
       <div class="result-score"><span id="final-score"></span><span>/ <span id="result-total">30</span></span></div>
       <h1 id="result-title" tabindex="-1"></h1>
       <button id="restart" class="button primary">Сыграть ещё раз <span aria-hidden="true">↻</span></button>
       <button id="choose-film" class="text-button">Выбрать другой фильм</button>
+      </div>
     </section>
     <p id="storage-error" class="storage-error" role="status" hidden>Браузер не разрешает сохранять прогресс. Игра продолжится, но после закрытия страницы ответы могут потеряться.</p>
     <noscript>Чтобы сыграть, включи JavaScript в настройках браузера.</noscript>

@@ -16,6 +16,14 @@ for (const film of [1, 2, 3, 4, 5]) {
 }
 
 const expectedMedia = new Set(['cover.jpg', ...[1, 2, 3, 4, 5].map(f => `film-${f}.jpg`), 'golos.ttf', 'FONT-LICENSE.txt']);
+for (const film of [1, 2, 3, 4, 5]) {
+  const path = 'portraits/film-' + film + '.webp';
+  const data = readFileSync('media/' + path);
+  assert.equal(data.toString('ascii', 0, 4), 'RIFF', path);
+  assert.equal(data.toString('ascii', 8, 12), 'WEBP', path);
+  assert(data.length > 1000 && data.length < 1500000, path);
+  expectedMedia.add(path);
+}
 let clipCount = 0;
 for (const q of questions) {
   assert.match(q.id, /^[a-z0-9-]+$/);
@@ -66,7 +74,8 @@ for (const q of questions) {
   }
 }
 assert.equal(clipCount, 225);
-assert.deepEqual(new Set(readdirSync('media')), expectedMedia, 'Missing or unused media');
+const mediaFiles = readdirSync('media', { recursive: true }).filter(name => statSync('media/' + name).isFile()).map(name => name.replaceAll('\\', '/'));
+assert.deepEqual(new Set(mediaFiles), expectedMedia, 'Missing or unused media');
 const bytes = [...expectedMedia].reduce((sum, name) => sum + statSync(`media/${name}`).size, 0);
 assert(bytes < 900 * 1024 * 1024, 'Site media budget exceeded');
 

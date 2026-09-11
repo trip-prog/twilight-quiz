@@ -6,6 +6,7 @@ let questions, game, activeFilm = null;
 const games = new Map();
 const storageKey = 'twilight-progress-v1';
 const letters = ['А', 'Б', 'В', 'Г'];
+const chapters = ['I', 'II', 'III', 'IV', 'V'];
 
 function showSection(id) {
   for (const section of ['welcome', 'quiz', 'result']) $(section).hidden = section !== id;
@@ -34,7 +35,7 @@ function updateProgress(completed) {
   $('progress').setAttribute('aria-valuenow', completed);
 }
 
-function renderQuestion() {
+function renderQuestion(scrollToQuestion = false) {
   stopVideo();
   const q = questions[game.index];
   $('question-number').textContent = String(game.index + 1).padStart(2, '0');
@@ -67,7 +68,8 @@ function renderQuestion() {
   }
   if (game.answers[game.index] !== undefined) renderAnswer(game.answers[game.index]);
   $('question-title').focus({ preventScroll: true });
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (scrollToQuestion) $('game-content').scrollIntoView({ block: 'start', behavior: 'instant' });
+  else window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 function choose(choice) {
@@ -114,6 +116,7 @@ function renderResult() {
   showSection('result');
   $('final-score').textContent = game.score;
   $('result-film').textContent = questions[0].source.filmTitle;
+  $('result-photo').src = './media/portraits/film-' + activeFilm + '.webp';
   $('result-total').textContent = questions.length;
   $('result-title').textContent = game.score === questions.length
     ? 'Ты помнишь каждую минуту!'
@@ -139,6 +142,9 @@ function start(film) {
   game = games.get(film);
   questions = game.questions;
   $('film-title').textContent = questions[0].source.filmTitle;
+  document.body.dataset.film = film;
+  $('chapter-number').textContent = chapters[film - 1];
+  $('chapter-photo').src = './media/portraits/film-' + film + '.webp';
   $('question-total').textContent = questions.length;
   $('progress').setAttribute('aria-valuemax', questions.length);
   save();
@@ -151,27 +157,35 @@ function showFilms() {
   if (!games.size) return;
   stopVideo();
   activeFilm = null;
+  delete document.body.dataset.film;
   save();
   $('films').replaceChildren();
   for (const [film, state] of games) {
     const button = document.createElement('button');
     button.className = 'film-card';
     const cover = document.createElement('img');
-    cover.src = `./media/film-${film}.jpg`;
+    cover.src = './media/portraits/film-' + film + '.webp';
     cover.alt = '';
-    cover.width = 640;
-    cover.height = 360;
+    cover.width = 1152;
+    cover.height = 1536;
     const body = document.createElement('span');
     body.className = 'film-card-body';
     const title = document.createElement('strong');
     title.textContent = state.questions[0].source.filmTitle;
+    const name = document.createElement('span');
+    name.className = 'film-name';
+    const order = document.createElement('span');
+    order.className = 'film-order';
+    order.textContent = chapters[film - 1];
+    order.setAttribute('aria-hidden', 'true');
+    name.append(order, title);
     const progress = document.createElement('span');
     progress.className = 'film-progress';
     progress.textContent = state.finished ? `${state.score} из ${state.questions.length} верно` : state.answers.length ? `${state.answers.length} из ${state.questions.length} · ${state.score} верно` : `${state.questions.length} вопросов`;
     const action = document.createElement('span');
     action.className = 'film-action';
-    action.textContent = state.finished ? 'Результат →' : state.answers.length ? 'Продолжить →' : 'Начать →';
-    body.append(title, progress, action);
+    action.textContent = state.finished ? 'Результат' : state.answers.length ? 'Продолжить' : 'Начать';
+    body.append(name, progress, action);
     button.append(cover, body);
     button.addEventListener('click', () => start(film));
     $('films').append(button);
@@ -190,7 +204,7 @@ $('next').addEventListener('click', () => {
   if (!advance(game)) return;
   save();
   if (game.finished) renderResult();
-  else renderQuestion();
+  else renderQuestion(true);
 });
 $('retry-video').addEventListener('click', () => {
   $('video-error').hidden = true;
