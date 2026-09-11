@@ -17,7 +17,6 @@ if len(sys.argv)>1: questions=[q for q in questions if q['film'] in list(map(int
 
 
 def render(q):
-    full = root/q['video'].removeprefix('./')
     ranges = [(q['video'], q['source']['start'], q['source']['end'])]
     if q.get('intro'):
         ranges.append((q['intro'], q['source']['introStart'], q['source']['introEnd']))
@@ -27,16 +26,15 @@ def render(q):
             continue
         temporary = target.with_suffix('.partial.mp4')
         candidate = root/'.work/candidates'/f"{q['id']}.mp4"
-        if target == full and candidate.exists():
+        if candidate.exists():
             c = candidates[q['id']]
             offset = start - (source['chapters'][c['film']-1]['start_time'] + c['start'])
             assert offset >= 0 and end-start+offset <= c['end']-c['start']+.05, q['id']
             inputs = ['-ss',str(round(offset,3)),'-i',str(candidate),'-map','0:v:0','-map','0:a:0']
-        elif target == full:
-            inputs = ['-rw_timeout','30000000','-ss',str(start),'-user_agent',agent,'-i',video_url,'-ss',str(start),'-i',str(root/'.work/saga-audio.m4a'),'-map','0:v:0','-map','1:a:0']
         else:
-            inputs = ['-ss',str(round(start-q['source']['start'],3)),'-i',str(full),'-map','0:v:0','-map','0:a:0']
-        command = ['ffmpeg','-hide_banner','-loglevel','error','-y',*inputs,'-t',str(round(end-start,3)),'-vf',"scale=w='min(960,iw)':h='min(540,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1",'-r','25','-c:v','libx264','-preset','fast','-crf','24','-pix_fmt','yuv420p','-threads','2','-c:a','aac','-b:a','96k','-ar','48000','-movflags','+faststart',str(temporary)]
+            inputs = ['-rw_timeout','30000000','-ss',str(start),'-user_agent',agent,'-i',video_url,'-ss',str(start),'-i',str(root/'.work/saga-audio.m4a'),'-map','0:v:0','-map','1:a:0']
+        duration = round(end-start,3)
+        command = ['ffmpeg','-hide_banner','-loglevel','error','-y',*inputs,'-t',str(duration),'-vf',"scale=w='min(960,iw)':h='min(540,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,setsar=1",'-r','25','-c:v','libx264','-preset','fast','-crf','24','-pix_fmt','yuv420p','-threads','2','-af',f'afade=t=in:d=0.03,afade=t=out:st={duration-.03:.3f}:d=0.03','-c:a','aac','-b:a','96k','-ar','48000','-movflags','+faststart',str(temporary)]
         result = subprocess.run(command,capture_output=True,timeout=180)
         if result.returncode:
             raise RuntimeError(q['id']+': '+result.stderr.decode(errors='replace').replace(video_url,'[source video]')[-1200:])

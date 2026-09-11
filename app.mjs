@@ -25,7 +25,7 @@ function showVideo(path, poster) {
   $('memory-cover').hidden = true;
   $('video-error').hidden = true;
   video.poster = poster || './media/cover.jpg';
-  video.src = `${path}?v=1`;
+  video.src = `${path}?v=3`;
   video.hidden = false;
   video.load();
 }
@@ -216,7 +216,7 @@ video.addEventListener('playing', () => { $('video-error').hidden = true; });
 window.addEventListener('pagehide', () => video.pause());
 
 try {
-  const response = await fetch('./questions.json?v=1');
+  const response = await fetch('./questions.json?v=3');
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const data = await response.json();
   if (!Array.isArray(data) || !data.length) throw new Error('Вопросы не найдены');
