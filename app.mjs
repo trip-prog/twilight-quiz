@@ -7,10 +7,12 @@ const games = new Map();
 const storageKey = 'twilight-progress-v1';
 const letters = ['А', 'Б', 'В', 'Г'];
 const chapters = ['I', 'II', 'III', 'IV', 'V'];
+const portrait = film => `./media/portraits/film-${film}.webp?v=4`;
 
 function showSection(id) {
   for (const section of ['welcome', 'quiz', 'result']) $(section).hidden = section !== id;
   $('back').hidden = id === 'welcome';
+  $('film-backdrop').hidden = id !== 'quiz';
 }
 
 function stopVideo() {
@@ -116,7 +118,7 @@ function renderResult() {
   showSection('result');
   $('final-score').textContent = game.score;
   $('result-film').textContent = questions[0].source.filmTitle;
-  $('result-photo').src = './media/portraits/film-' + activeFilm + '.webp';
+  $('result-photo').src = portrait(activeFilm);
   $('result-total').textContent = questions.length;
   $('result-title').textContent = game.score === questions.length
     ? 'Ты помнишь каждую минуту!'
@@ -144,7 +146,7 @@ function start(film) {
   $('film-title').textContent = questions[0].source.filmTitle;
   document.body.dataset.film = film;
   $('chapter-number').textContent = chapters[film - 1];
-  $('chapter-photo').src = './media/portraits/film-' + film + '.webp';
+  $('backdrop-photo').src = portrait(film);
   $('question-total').textContent = questions.length;
   $('progress').setAttribute('aria-valuemax', questions.length);
   save();
@@ -164,7 +166,7 @@ function showFilms() {
     const button = document.createElement('button');
     button.className = 'film-card';
     const cover = document.createElement('img');
-    cover.src = './media/portraits/film-' + film + '.webp';
+    cover.src = portrait(film);
     cover.alt = '';
     cover.width = 1152;
     cover.height = 1536;

@@ -7,10 +7,11 @@
   <meta name="description" content="Викторина по «Сумеркам»: пять фильмов, по 30 вопросов с видео в каждом. Продолжай с сохранённого места.">
   <title>Сумерки — для тебя ❤️</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='54'%3E🌙%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2">
-  <script type="module" src="./app.mjs?v=3"></script>
+  <link rel="stylesheet" href="./styles.css?v=4">
+  <script type="module" src="./app.mjs?v=4"></script>
 </head>
 <body>
+  <div id="film-backdrop" class="film-backdrop" aria-hidden="true" hidden><img id="backdrop-photo" alt=""></div>
   <header class="masthead">
     <a class="wordmark" href="./" aria-label="Сумерки — на главную"><span class="brand-moon" aria-hidden="true"></span>сумерки</a>
     <button id="back" class="text-button" hidden>← К фильмам</button>
@@ -32,9 +33,6 @@
           <span id="chapter-number" class="chapter-number" aria-hidden="true"></span>
           <h1 id="film-title" class="chapter-title"></h1>
         </div>
-        <figure class="chapter-portrait">
-          <img id="chapter-photo" width="1152" height="1536" alt="Ваше фото в атмосфере «Сумерек»">
-        </figure>
       </div>
       <div id="game-content" class="game-content">
       <div class="quiz-heading">
