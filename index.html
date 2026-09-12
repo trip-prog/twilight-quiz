@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080f14">
-  <meta name="description" content="Викторина по «Сумеркам»: пять фильмов, по 30 вопросов с видео в каждом. Продолжай с сохранённого места.">
+  <meta name="description" content="Викторина по «Сумеркам»: по 100 вопросов с видео на каждый фильм. Основная игра и дополнение с отдельным сохранением прогресса.">
   <title>Сумерки — для тебя ❤️</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='54'%3E🌙%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=4">
-  <script type="module" src="./app.mjs?v=4"></script>
+  <link rel="stylesheet" href="./styles.css?v=5">
+  <script type="module" src="./app.mjs?v=5"></script>
 </head>
 <body>
   <div id="film-backdrop" class="film-backdrop" aria-hidden="true" hidden><img id="backdrop-photo" alt=""></div>
@@ -24,6 +24,10 @@
         <p class="welcome-intro">Выбери фильм.</p>
         <p id="load-status" class="quiet" role="status" hidden></p>
       </div>
+      <div id="pack-switch" class="pack-switch" role="group" aria-label="Набор вопросов" hidden>
+        <button id="pack-base" aria-pressed="true">Основная игра <span>30</span></button>
+        <button id="pack-extra" aria-pressed="false">Дополнение <span>+70</span></button>
+      </div>
       <div id="films" class="films" aria-label="Выбор фильма"></div>
     </section>
 
@@ -33,6 +37,7 @@
           <span id="chapter-number" class="chapter-number" aria-hidden="true"></span>
           <h1 id="film-title" class="chapter-title"></h1>
         </div>
+        <p id="pack-label" class="pack-label" hidden>Дополнение</p>
       </div>
       <div id="game-content" class="game-content">
       <div class="quiz-heading">

@@ -2,8 +2,10 @@ import { createGame, answer, advance, snapshot } from './game.mjs';
 
 const $ = id => document.getElementById(id);
 const video = $('video');
-let questions, game, activeFilm = null;
+let questions, game, activeFilm = null, activePack = 'base';
 const games = new Map();
+const extras = new Map();
+const currentGames = () => activePack === 'extra' ? extras : games;
 const storageKey = 'twilight-progress-v1';
 const letters = ['А', 'Б', 'В', 'Г'];
 const chapters = ['I', 'II', 'III', 'IV', 'V'];
@@ -117,7 +119,7 @@ function renderResult() {
   stopVideo();
   showSection('result');
   $('final-score').textContent = game.score;
-  $('result-film').textContent = questions[0].source.filmTitle;
+  $('result-film').textContent = questions[0].source.filmTitle + (activePack === 'extra' ? ' · Дополнение' : '');
   $('result-photo').src = portrait(activeFilm);
   $('result-total').textContent = questions.length;
   $('result-title').textContent = game.score === questions.length
@@ -133,17 +135,23 @@ function renderResult() {
 
 function save() {
   try {
-    localStorage.setItem(storageKey, JSON.stringify({ active: activeFilm, films: Object.fromEntries([...games].map(([film, state]) => [film, snapshot(state)])) }));
+    localStorage.setItem(storageKey, JSON.stringify({
+      active: activeFilm,
+      pack: activePack,
+      films: Object.fromEntries([...games].map(([film, state]) => [film, snapshot(state)])),
+      extras: Object.fromEntries([...extras].map(([film, state]) => [film, snapshot(state)]))
+    }));
     $('storage-error').hidden = true;
   } catch { $('storage-error').hidden = false; }
 }
 
 function start(film) {
-  if (!games.has(film)) return;
+  if (!currentGames().has(film)) return;
   activeFilm = film;
-  game = games.get(film);
+  game = currentGames().get(film);
   questions = game.questions;
   $('film-title').textContent = questions[0].source.filmTitle;
+  $('pack-label').hidden = activePack !== 'extra';
   document.body.dataset.film = film;
   $('chapter-number').textContent = chapters[film - 1];
   $('backdrop-photo').src = portrait(film);
@@ -156,13 +164,14 @@ function start(film) {
 }
 
 function showFilms() {
-  if (!games.size) return;
+  if (!currentGames().size) return;
   stopVideo();
   activeFilm = null;
   delete document.body.dataset.film;
   save();
   $('films').replaceChildren();
-  for (const [film, state] of games) {
+  for (const pack of ['base', 'extra']) $('pack-' + pack).setAttribute('aria-pressed', String(activePack === pack));
+  for (const [film, state] of currentGames()) {
     const button = document.createElement('button');
     button.className = 'film-card';
     const cover = document.createElement('img');
@@ -196,8 +205,12 @@ function showFilms() {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 $('restart').addEventListener('click', () => {
-  games.set(activeFilm, createGame(questions));
+  currentGames().set(activeFilm, createGame(questions));
   start(activeFilm);
+});
+for (const pack of ['base', 'extra']) $('pack-' + pack).addEventListener('click', () => {
+  activePack = pack;
+  showFilms();
 });
 $('back').addEventListener('click', showFilms);
 $('choose-film').addEventListener('click', showFilms);
@@ -218,18 +231,25 @@ video.addEventListener('playing', () => { $('video-error').hidden = true; });
 window.addEventListener('pagehide', () => video.pause());
 
 try {
-  const response = await fetch('./questions.json?v=3');
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const data = await response.json();
-  if (!Array.isArray(data) || !data.length) throw new Error('Вопросы не найдены');
+  const [data, extraData] = await Promise.all(['questions.json?v=3', 'extra-questions.json?v=5'].map(async path => {
+    const response = await fetch('./' + path);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rows = await response.json();
+    if (!Array.isArray(rows) || !rows.length) throw new Error('Вопросы не найдены');
+    return rows;
+  }));
   let saved;
   try { saved = JSON.parse(localStorage.getItem(storageKey)); }
   catch { $('storage-error').hidden = false; }
   for (const film of [1, 2, 3, 4, 5]) {
     const items = data.filter(q => q.film === film);
     if (items.length) games.set(film, createGame(items, saved?.films?.[film]));
+    const extraItems = extraData.filter(q => q.film === film);
+    if (extraItems.length) extras.set(film, createGame(extraItems, saved?.extras?.[film]));
   }
-  if (games.has(saved?.active)) start(saved.active);
+  activePack = saved?.pack === 'extra' ? 'extra' : 'base';
+  $('pack-switch').hidden = false;
+  if (currentGames().has(saved?.active)) start(saved.active);
   else showFilms();
 } catch {
   $('load-status').hidden = false;

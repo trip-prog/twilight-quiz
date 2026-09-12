@@ -6,14 +6,19 @@ import { fileURLToPath } from 'node:url';
 import { createGame, answer, advance, snapshot } from './game.mjs';
 
 process.chdir(fileURLToPath(new URL('.', import.meta.url)));
-const questions = JSON.parse(readFileSync('questions.json', 'utf8'));
-assert.equal(questions.length, 150);
-assert.equal(new Set(questions.map(q => q.id)).size, 150);
-assert.equal(new Set(questions.map(q => q.prompt)).size, 150);
+const baseQuestions = JSON.parse(readFileSync('questions.json', 'utf8'));
+const extraQuestions = JSON.parse(readFileSync('extra-questions.json', 'utf8'));
+const questions = [...baseQuestions, ...extraQuestions];
+assert.equal(baseQuestions.length, 150);
+assert.equal(extraQuestions.length, 350);
+assert.equal(new Set(questions.map(q => q.id)).size, 500);
+assert.equal(new Set(questions.map(q => q.prompt)).size, 500);
 for (const film of [1, 2, 3, 4, 5]) {
-  assert.equal(questions.filter(q => q.film === film).length, 30);
-  for (const type of ['memory', 'scene']) assert.equal(questions.filter(q => q.film === film && q.type === type).length, 15);
+  assert.equal(baseQuestions.filter(q => q.film === film).length, 30);
+  assert.equal(extraQuestions.filter(q => q.film === film).length, 70);
+  for (const type of ['memory', 'scene']) assert.equal(baseQuestions.filter(q => q.film === film && q.type === type).length, 15);
 }
+assert(extraQuestions.every(q => q.type === 'memory'));
 
 const expectedMedia = new Set(['cover.jpg', ...[1, 2, 3, 4, 5].map(f => `film-${f}.jpg`), 'golos.ttf', 'FONT-LICENSE.txt']);
 for (const film of [1, 2, 3, 4, 5]) {
@@ -37,11 +42,12 @@ for (const q of questions) {
   assert(q.source.filmTitle, q.id);
   assert.equal(q.source.year, 2007 + q.film, q.id);
   assert.equal(new URL(q.source.url).protocol, 'https:');
-  assert.equal(q.poster, `./media/${q.id}.jpg`);
+  const mediaBase = `./media/${extraQuestions.includes(q) ? 'extra/' : ''}${q.id}`;
+  assert.equal(q.poster, `${mediaBase}.jpg`);
   assert(statSync(q.poster).size > 1000);
-  expectedMedia.add(`${q.id}.jpg`);
+  expectedMedia.add(q.poster.replace('./media/', ''));
   const ranges = [[q.video, q.source.start, q.source.end]];
-  assert.equal(q.video, `./media/${q.id}.mp4`);
+  assert.equal(q.video, `${mediaBase}.mp4`);
   if (q.type === 'scene') {
     assert.equal(q.intro, `./media/${q.id}-intro.mp4`);
     assert(q.intro !== q.video);
@@ -73,14 +79,14 @@ for (const q of questions) {
     clipCount++;
   }
 }
-assert.equal(clipCount, 225);
+assert.equal(clipCount, 575);
 const mediaFiles = readdirSync('media', { recursive: true }).filter(name => statSync('media/' + name).isFile()).map(name => name.replaceAll('\\', '/'));
 assert.deepEqual(new Set(mediaFiles), expectedMedia, 'Missing or unused media');
 const bytes = [...expectedMedia].reduce((sum, name) => sum + statSync(`media/${name}`).size, 0);
-assert(bytes < 900 * 1024 * 1024, 'Site media budget exceeded');
+assert(bytes < 350 * 1024 * 1024, 'Site media budget exceeded');
 
-for (const film of [1, 2, 3, 4, 5]) for (const mode of ['correct', 'wrong', 'mixed']) {
-  const items = questions.filter(q => q.film === film);
+for (const pack of [baseQuestions, extraQuestions]) for (const film of [1, 2, 3, 4, 5]) for (const mode of ['correct', 'wrong', 'mixed']) {
+  const items = pack.filter(q => q.film === film);
   let game = createGame(items);
   for (const [index, q] of items.entries()) {
     assert.equal(game.index, index);
@@ -98,12 +104,12 @@ for (const film of [1, 2, 3, 4, 5]) for (const mode of ['correct', 'wrong', 'mix
     assert.equal(advance(game), true);
     game = createGame(items, snapshot(game));
   }
-  assert.equal(game.score, mode === 'correct' ? 30 : mode === 'wrong' ? 0 : 15);
+  assert.equal(game.score, mode === 'correct' ? items.length : mode === 'wrong' ? 0 : Math.ceil(items.length / 2));
   assert.equal(game.finished, true);
   assert.equal(answer(game, 0), false);
   assert.equal(advance(game), false);
 }
-const items = questions.filter(q => q.film === 1);
+const items = baseQuestions.filter(q => q.film === 1);
 const fresh = createGame(items);
 assert.equal(fresh.score, 0);
 assert.equal(fresh.index, 0);
@@ -112,11 +118,20 @@ const saved = snapshot(fresh);
 for (const bad of [null, {}, { ...saved, ids: [] }, { ...saved, index: 30 }, { ...saved, index: -1 }, { ...saved, index: 1.2 }, { ...saved, finished: true }, { ...saved, answers: [9] }, { ...saved, answers: ['0'] }, { ...saved, answers: [null] }, { ...saved, answers: [0, 1] }]) {
   assert.deepEqual(createGame(items, bad), fresh, 'Invalid or stale saves must restart safely');
 }
-const isolated = createGame(questions.filter(q => q.film === 2), saved);
+const isolated = createGame(baseQuestions.filter(q => q.film === 2), saved);
 assert.equal(isolated.answers.length, 0, 'Progress belongs to one film');
 answer(fresh, items[0].correct);
 const completedAnswer = snapshot(fresh);
+const extraItems = extraQuestions.filter(q => q.film === 1);
+const extraGame = createGame(extraItems, completedAnswer);
+assert.equal(extraGame.answers.length, 0, 'Base progress must not leak into the expansion');
+answer(extraGame, extraItems[0].correct);
+assert.equal(createGame(items, snapshot(extraGame)).answers.length, 0, 'Expansion progress must not replace base progress');
+assert.equal(createGame(items, completedAnswer).score, 1, 'Original progress remains restorable');
+assert.equal(createGame(extraItems, snapshot(extraGame)).score, 1, 'Expansion progress restores independently');
+assert.equal(createGame(extraItems).answers.length, 0, 'Expansion can restart independently');
+assert.equal(createGame(items, completedAnswer).score, 1, 'Restarting expansion keeps original progress');
 assert.equal(createGame(items, { ...completedAnswer, score: 999 }).score, 1, 'Saved score is not trusted');
 fresh.answers[0] = (items[0].correct + 1) % 4;
 assert.equal(completedAnswer.answers[0], items[0].correct, 'Snapshots must not share mutable answers');
-console.log(`OK: 5 × 30 questions, 75 memory + 75 scene, ${clipCount} H.264/AAC clips, ${(bytes / 1024 / 1024).toFixed(1)} MiB; full games, saved progress, answer lock, invalid saves, film isolation, restart.`);
+console.log(`OK: 5 × (30 + 70) questions, ${clipCount} H.264/AAC clips, ${(bytes / 1024 / 1024).toFixed(1)} MiB; full games, saved progress, answer lock, invalid saves, film and pack isolation, restart.`);
